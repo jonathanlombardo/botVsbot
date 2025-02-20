@@ -4,10 +4,11 @@ from time import sleep
 import os
 
 class Bot:
-  def __init__(self, role, model='gpt-4o-mini'):
+  def __init__(self, role: str, model='gpt-4o-mini', name: str = None):
     self.role = role
     self.model = model
     self.chat = OpenAI().chat
+    self.name = name or role.capitalize()
 
   def reply(self, conversation: Conversation):
     
@@ -16,19 +17,20 @@ class Bot:
         messages=conversation.relativeList(),
     )
 
-    reply = Message(self.role, completion.choices[0].message.content)
+    reply = Message(self.role, completion.choices[0].message.content, sender = self.name)
     conversation.add_message(reply)
     return reply
 
 
 class Message:
-  def __init__(self, role, content, mirror=False):
+  def __init__(self, role, content, mirror=False, sender=None):
     self.role: str = role
     self.content: str = content
+    self.sender = sender or role.capitalize()
     self.mirror = Message('user' if self.role == 'system' else 'system', self.content, mirror=True) if not mirror else None
 
   def write(self, speed=0.02):
-    print(f'{self.role.upper()}:')
+    print(f'{self.sender}:')
     msg = ''
     for char in str(self.content):
       columns, _ = os.get_terminal_size()
