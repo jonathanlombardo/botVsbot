@@ -12,7 +12,9 @@ def main():
   aiBot = Bot('system')
   print('Creating bots... Done!')
 
-  chat: Conversation = Conversation([Message('user', input('Write first input message: '))])
+  context = Message('developer', input('Write a context: '))
+  prompt = Message('user', input('Write first user prompt: '))
+  chat: Conversation = Conversation([context, prompt])
   print()
 
   timeout = 0
