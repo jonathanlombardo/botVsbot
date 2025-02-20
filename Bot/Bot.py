@@ -13,7 +13,7 @@ class Bot:
     
     completion = self.chat.completions.create(
         model=self.model,
-        messages=conversation.list(),
+        messages=conversation.relativeList(),
     )
 
     reply = Message(self.role, completion.choices[0].message.content)
@@ -22,13 +22,11 @@ class Bot:
 
 
 class Message:
-  def __init__(self, role, content):
+  def __init__(self, role, content, mirror=False):
     self.role: str = role
     self.content: str = content
+    self.mirror = Message('user' if self.role == 'system' else 'system', self.content, mirror=True) if not mirror else None
 
-  def __str__(self):
-    return f'{self.role.upper()}: {self.content}'
-  
   def write(self, speed=0.02):
     print(f'{self.role.upper()}:')
     msg = ''
@@ -39,6 +37,13 @@ class Message:
       msg += char
       print(f"\r{msg}", end='', flush=True)
       sleep(speed)
+
+  def toDict(self):
+    return {'role': self.role, 'content': self.content}
+  
+  def __str__(self):
+    return f'{self.role.upper()}: {self.content}'
+  
   
 class Conversation:
   def __init__(self, messages: list[Message]):
@@ -50,9 +55,18 @@ class Conversation:
   def last(self) -> Message:
     return self.messages[-1]
   
-  def list(self):
-    return [{'role': message.role if self.last().role == 'user' else Conversation.notRole(message.role), 'content': message.content} for message in self.messages]
+  def waitFor(self):
+    return 'system' if self.last().role == 'user' else 'user'
   
+  def list(self):
+    return [message.toDict() for message in self.messages]
+  
+  def mirror(self):
+    return Conversation([message.mirror for message in self.messages])
+  
+  def relativeList(self, role = 'system'):
+    return self.list() if self.waitFor() == role else self.mirror().list()
+
   def __getitem__(self, index) -> Message:
     return self.messages[index]
   
