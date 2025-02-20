@@ -3,13 +3,25 @@ from time import sleep
 from dotenv import load_dotenv
 import os, sys
 
+def readarguments():
+  import argparse
+
+  parser = argparse.ArgumentParser(description='Let the AI chat with itself')
+  parser.add_argument('--model', '-m', type=str, default='gpt-4o-mini', help='Choose the model to use for the AI chat')
+  parser.add_argument('--timeout-count', '-t', type=int, default=1, help='Choose the number of messages before asking to continue', choices=range(1, 101))
+  parser.add_argument('--delay', '-d', type=float, default=0.02, help='Choose slowness when AI writing messages')
+  parser.add_argument('--user-bot-name', '-ub', type=str, default='User', help='Choose the name of the user bot')
+  parser.add_argument('--ai-bot-name', '-ab', type=str, default='AI', help='Choose the name of the AI bot')
+  return parser.parse_args()
+
 def main():
 
   load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+  args = readarguments()
 
   print('Creating bots...', end='\r')
-  userBot = Bot('user')
-  aiBot = Bot('system')
+  userBot = Bot('user', args.model, args.user_bot_name)
+  aiBot = Bot('system', args.model, args.ai_bot_name)
   print('Creating bots... Done!')
 
   context = Message('developer', input('Write a context: '))
@@ -17,13 +29,13 @@ def main():
   chat: Conversation = Conversation([context, prompt])
   print()
 
-  timeout = 0
+  timeout = args.timeout_count - 1
   counter = 0
   while counter <= timeout:
-    bot = userBot if chat.last().role == 'system' else aiBot
+    bot = userBot if chat.waitFor() == 'user' else aiBot
     bot.reply(chat)
 
-    chat.last().write(delay=0.02)
+    chat.last().write(delay=args.delay)
     print('\n')
 
     if counter >= timeout:
