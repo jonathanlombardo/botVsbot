@@ -23,7 +23,7 @@ def main():
     bot = userBot if chat.last().role == 'system' else aiBot
     bot.reply(chat)
 
-    chat.last().write(speed=0.02)
+    chat.last().write(delay=0.02)
     print('\n')
 
     if counter >= timeout:

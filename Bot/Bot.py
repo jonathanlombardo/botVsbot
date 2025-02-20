@@ -29,7 +29,7 @@ class Message:
     self.sender = sender or role.capitalize()
     self.mirror = Message('user' if self.role == 'system' else 'system', self.content, mirror=True) if not mirror else None
 
-  def write(self, speed=0.02):
+  def write(self, delay=0.02):
     print(f'{self.sender}:')
     msg = ''
     for char in str(self.content):
@@ -38,7 +38,7 @@ class Message:
       if len(msg) >= columns: print(); msg = ''
       msg += char
       print(f"\r{msg}", end='', flush=True)
-      sleep(speed)
+      sleep(delay)
 
   def toDict(self):
     return {'role': self.role, 'content': self.content}
