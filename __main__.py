@@ -19,14 +19,13 @@ def main():
   load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
   args = readarguments()
 
-  print('Creating bots...', end='\r')
-  userBot = Bot('user', args.model, args.user_bot_name)
-  aiBot = Bot('system', args.model, args.ai_bot_name)
-  print('Creating bots... Done!')
+  print('Creating bots:')
+  userBot: Bot = Bot('user', args.model, args.user_bot_name, context=input(f'   Write a context for {args.user_bot_name}:'))
+  aiBot: Bot = Bot('system', args.model, args.ai_bot_name, context=input(f'   Write a context for {args.ai_bot_name}:'))
+  print('   Done!')
 
-  context = Message('developer', input('Write a context: '))
-  prompt = Message('user', input('Write first user prompt: '))
-  chat: Conversation = Conversation([context, prompt])
+  prompt = Message('user', input(f'Write first prompt for {userBot.name}: '))
+  chat: Conversation = Conversation([prompt])
   print()
 
   timeout = args.timeout_count - 1

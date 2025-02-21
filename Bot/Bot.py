@@ -4,17 +4,20 @@ from time import sleep
 import os
 
 class Bot:
-  def __init__(self, role: str, model='gpt-4o-mini', name: str = None):
+  def __init__(self, role: str, model='gpt-4o-mini', name: str = None, context=None):
     self.role = role
     self.model = model
     self.chat = OpenAI().chat
     self.name = name or role.capitalize()
+    self.context = Message(role = 'developer', content = context)
+    if self.context:
+      self.context.strip('.').strip()
+      self.context.append('. Your name is ' + self.name + '.')
 
   def reply(self, conversation: Conversation):
-    
     completion = self.chat.completions.create(
         model=self.model,
-        messages=conversation.relativeList(),
+        messages=conversation.appendContext(self.context if self.context else None).relativeList(),
     )
 
     reply = Message(self.role, completion.choices[0].message.content, sender = self.name)
@@ -43,9 +46,21 @@ class Message:
   def toDict(self):
     return {'role': self.role, 'content': self.content}
   
+  def append(self, content):
+    self.content += content
+
+  def strip(self, *args, **kwargs):
+    self.content = self.content.strip(*args, **kwargs)
+    return self
+  
   def __str__(self):
     return f'{self.role.upper()}: {self.content}'
   
+  def __repr__(self):
+    return f'Message(role={self.role}, content={self.content[:7]+"..." if len(self.content) > 10 else self.content}, sender={self.sender})'
+
+  def __bool__(self):
+    return bool(self.content)
   
 class Conversation:
   def __init__(self, messages: list[Message]):
@@ -69,10 +84,16 @@ class Conversation:
   def relativeList(self, role = 'system'):
     return self.list() if self.waitFor() == role else self.mirror().list()
 
+  def appendContext(self, context: Message):
+    if not context: return self
+    messages = self.messages.copy()
+    messages.insert(0, context)
+    return Conversation(messages=messages)
+  
   def __getitem__(self, index) -> Message:
     return self.messages[index]
   
-  @staticmethod
-  def notRole(role):
-    return 'system' if role == 'user' else 'user'
+  def __str__(self):
+    return '\n'.join([str(message) for message in self.messages])
+  
   
