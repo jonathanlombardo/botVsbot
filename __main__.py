@@ -24,7 +24,7 @@ def main():
   aiBot: Bot = Bot('system', args.model, args.ai_bot_name, context=input(f'   Write a context for {args.ai_bot_name}:'))
   print('   Done!')
 
-  prompt = Message('user', input(f'Write first prompt for {userBot.name}: '))
+  prompt = Message('user', input(f'Write first prompt for {userBot.name}: '), sender=userBot.name)
   chat: Conversation = Conversation([prompt])
   print()
 
@@ -47,6 +47,11 @@ def main():
     
     counter += 1
   
+  if len(chat) > 0 and input('Do you want to save the conversation? (y/n): ').lower() == 'y':
+    path = input('Write the path to save the conversation: ')
+    chat.save(path=path.strip(), bots=[userBot, aiBot])
+  
+  input('\nPress any key to exit...')
 
 if __name__ == '__main__':
   main()

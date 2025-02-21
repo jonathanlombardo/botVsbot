@@ -54,7 +54,7 @@ class Message:
     return self
   
   def __str__(self):
-    return f'{self.role.upper()}: {self.content}'
+    return f'{self.sender}:\n{self.content}'
   
   def __repr__(self):
     return f'Message(role={self.role}, content={self.content[:7]+"..." if len(self.content) > 10 else self.content}, sender={self.sender})'
@@ -90,10 +90,27 @@ class Conversation:
     messages.insert(0, context)
     return Conversation(messages=messages)
   
+  def save(self, path='conversation.text', bots: list[Bot]=[]):
+    path = path.strip() if path else 'conversation.txt'
+    path = path if path.endswith('.txt') else path+'.txt'
+
+    with open(path, 'w') as file:
+      file.write(f'Conversation between Bots:\n\n\n')
+
+      for bot in bots: file.write(f'\t{bot.name}: {bot.context.content}\n\n')
+      file.write(f'\n')
+
+      for message in self.messages:
+        tab = message.role == 'system'
+        text = f'\t{str(message).replace("\n", '\n\t')}' if tab else str(message)
+        file.write(text+'\n\n')
+  
   def __getitem__(self, index) -> Message:
     return self.messages[index]
   
   def __str__(self):
     return '\n'.join([str(message) for message in self.messages])
   
+  def __len__(self):
+    return len(self.messages)
   
