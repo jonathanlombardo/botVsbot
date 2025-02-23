@@ -7,51 +7,61 @@ class StopThread(): pass
 
 class Speaker:
     def __init__(self, voice: int = 0, speed: int = 200):
-        self.voiceId: int = voice
-        self.speed: int = speed
-        self.on: bool = True
-        self.thread: Thread = threading.Thread(target=self.worker, daemon=True)
+        self._on: bool = True
+        self._voiceId: int = voice
+        self._speed: int = speed
+        self._thread: Thread = threading.Thread(target=self.worker, daemon=True)
 
     def initEngine(self):
-        self.engine = pyttsx3.init()
-        voices: list[Voice] = self.engine.getProperty('voices')
-        self.engine.setProperty('rate', self.speed)
-        self.engine.setProperty('voice', voices[self.voiceId].id)
+        self._engine = pyttsx3.init()
+        self._voices: list[Voice] = self._engine.getProperty('voices')
+        self.initEngineProps()
+
+    def initEngineProps(self):
+      self._engine.setProperty('voice', self._voices[self._voiceId].id)
+      self._engine.setProperty('rate', self._speed)
+
+    def say(self, message: dict):
+      if not self._on: return
+      self._engine.setProperty('voice', self._voices[message.get('voice')].id)
+      self._engine.setProperty('rate', message.get('speed'))
+      self._engine.say(message.get('text'))
+      self._engine.runAndWait()
+      self.initEngineProps()
 
     def worker(self):
-        self.queue: queue.Queue = queue.Queue()
+        self._queue: queue.Queue = queue.Queue()
         self.initEngine()
         while True:
-            text = self.queue.get()
-            if isinstance(text, StopThread): self.queue.task_done(); break
-            if self.on:
-              self.engine.say(text)
-              self.engine.runAndWait()
-            self.queue.task_done()
+            message: dict = self._queue.get()
+            if isinstance(message, StopThread): self._queue.task_done(); break
+            self.say(message)
 
     def start(self):
-      self.on = True
-      self.thread.start()
+      self._on = True
+      self._thread.start()
       return self
     
-    def add(self, text: str):
-        self.queue.put(text)
+    def play(self, text: str, voice: int = None, speed: int = None):
+        self._queue.put({'text': text, 'voice': voice or self._voiceId, 'speed': speed or self._speed})
 
-    def waitAndStop(self):
-        self.queue.put(StopThread())
-        self.thread.join()
-    
-    def togglePause(self):
-        self.on = not self.on # toggle pause
-        if not self.on:
-            # if paused, worker will skip the next items in queue
-            self.queue.put(StopThread()) # add stop item to queue
-            self.engine.stop() # stop current speaking
-            self.thread.join() # wait for worker to stop
-            self.queue = queue.Queue() # reset queue
-            self.engine = self.initEngine() # reset engine
-            self.thread = threading.Thread(target=self.worker, daemon=True) # reset thread
-            self.thread.start() # restart thread
+    def stop(self, wait: bool = False):
+        if not wait: self._on = False
+        self._queue.put(StopThread()) # add stop item to queue
+        if not wait: self._engine.stop() # stop current speaking
+        self._thread.join() # wait for worker to stop
+        if wait: self._on = False
+
+    def resume(self):
+        self._on = True
+        self._queue = queue.Queue() # reset queue
+        self._engine = self.initEngine() # reset engine
+        self._thread = threading.Thread(target=self.worker, daemon=True) # reset thread
+        self._thread.start() # restart thread
+
+    def switchPlayState(self, wait: bool = False):
+        if self._on: self.stop(wait)
+        else: self.resume()
 
     @staticmethod
     def test(text):
