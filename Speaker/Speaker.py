@@ -1,4 +1,4 @@
-import threading, queue, pyttsx3
+import threading, queue, pyttsx3, json
 from threading import Thread
 from pyttsx3.voice import Voice
 from time import sleep
@@ -64,11 +64,22 @@ class Speaker:
         else: self.resume()
 
     @staticmethod
-    def test(text):
+    def play(text, voice=0, speed=200):
+        if not isinstance(text, list): text = [text]
         engine: pyttsx3.Engine = None
         engine = pyttsx3.init()
         voices: list[Voice] = engine.getProperty('voices')
-        engine.setProperty('rate', 200)
-        engine.setProperty('voice', voices[0].id)
-        engine.say(text)
+        engine.setProperty('rate', speed)
+        engine.setProperty('voice', voices[voice].id)
+        for t in text: engine.say(text)
         engine.runAndWait()
+
+    @staticmethod
+    def getVoices(dump=False):
+        engine: pyttsx3.Engine = None
+        engine = pyttsx3.init()
+        voices: list[Voice] = engine.getProperty('voices')
+        voicesData = [{'id': i, 'name': voice.name, 'lang': voice.languages } for i, voice in enumerate(voices)]
+        if dump: json.dumps(print(voicesData), indent=2)
+        return voicesData
+    
