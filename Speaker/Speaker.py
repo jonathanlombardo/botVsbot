@@ -10,32 +10,33 @@ class Speaker:
         self._on: bool = True
         self._voiceId: int = voice
         self._speed: int = speed
-        self._thread: Thread = threading.Thread(target=self.worker, daemon=True)
+        self._thread: Thread = threading.Thread(target=self._worker, daemon=True)
+        self._initEngine()
 
-    def initEngine(self):
+    def _initEngine(self):
         self._engine = pyttsx3.init()
         self._voices: list[Voice] = self._engine.getProperty('voices')
-        self.initEngineProps()
+        self._initEngineProps()
 
-    def initEngineProps(self):
+    def _initEngineProps(self):
       self._engine.setProperty('voice', self._voices[self._voiceId].id)
       self._engine.setProperty('rate', self._speed)
 
-    def say(self, message: dict):
+    def _say(self, message: dict):
       if not self._on: return
       self._engine.setProperty('voice', self._voices[message.get('voice')].id)
       self._engine.setProperty('rate', message.get('speed'))
       self._engine.say(message.get('text'))
       self._engine.runAndWait()
-      self.initEngineProps()
+      self._initEngineProps()
 
-    def worker(self):
+    def _worker(self):
         self._queue: queue.Queue = queue.Queue()
-        self.initEngine()
+        self._initEngine()
         while True:
             message: dict = self._queue.get()
             if isinstance(message, StopThread): self._queue.task_done(); break
-            self.say(message)
+            self._say(message)
 
     def start(self):
       self._on = True
@@ -55,8 +56,8 @@ class Speaker:
     def resume(self):
         self._on = True
         self._queue = queue.Queue() # reset queue
-        self._engine = self.initEngine() # reset engine
-        self._thread = threading.Thread(target=self.worker, daemon=True) # reset thread
+        self._engine = self._initEngine() # reset engine
+        self._thread = threading.Thread(target=self._worker, daemon=True) # reset thread
         self._thread.start() # restart thread
 
     def switchPlayState(self, wait: bool = False):
