@@ -44,6 +44,7 @@ class Speaker:
       return self
     
     def play(self, text: str, voice: int = None, speed: int = None):
+        if voice < -len(self._voices) or voice >= len(self._voices) or voice is None: voice = self._voiceId
         self._queue.put({'text': text, 'voice': voice or self._voiceId, 'speed': speed or self._speed})
 
     def stop(self, wait: bool = False):
