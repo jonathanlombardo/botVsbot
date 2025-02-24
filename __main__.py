@@ -1,4 +1,5 @@
 from Bot import Bot, Conversation, Message
+from Speaker import Speaker
 from time import sleep
 from dotenv import load_dotenv
 import os, sys
@@ -30,9 +31,11 @@ def main():
 
   timeout = args.timeout_count - 1
   counter = 0
+  speaker = Speaker().start()
   while counter <= timeout:
     bot = userBot if chat.waitFor() == 'user' else aiBot
     bot.reply(chat)
+    speaker.play(chat.last().content, voice=0)
 
     chat.last().write(delay=args.delay)
     print('\n')
