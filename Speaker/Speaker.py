@@ -66,7 +66,7 @@ class Speaker:
         else: self.resume()
 
     @staticmethod
-    def play(text, voice=0, speed=200):
+    def readText(text, voice=0, speed=200):
         if not isinstance(text, list): text = [text]
         engine: pyttsx3.Engine = None
         engine = pyttsx3.init()
